@@ -11,7 +11,9 @@ count=Counter(DNA)#get the number of each type of nucleotide
 L=len(dna)
 print('The GC content is:',(count['G']+count['C'])*100/L,'%')
 
-DNA1=cdna=mRNA=DNA[::]
+DNA1=DNA[::]
+cdna=DNA[::]
+mRNA=DNA[::]
 nuc=['A','G','C','T']
 pair=['T','C','G','A']
 mrna=['U','C','G','A']
