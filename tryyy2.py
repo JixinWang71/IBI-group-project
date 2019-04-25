@@ -1,69 +1,58 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Sun Apr 21 21:58:07 2019
 
-@author: jxm72
-"""
-
-# -*- coding: utf-8 -*-
-"""
-Created on Sun Apr 14 15:44:41 2019
-
-@author: jxm72
-"""
-import sys
 import re
 import matplotlib.pyplot as plt; plt.rcdefaults()
 import numpy as np
 import matplotlib.pyplot as plt
-seq='TCGAGGGATCCAATTCGAATTCAAGCTTACGTAGCTGGATCCGGATCCGGATCC'
-seql=list(seq)
-
-diction={'AluI':['(TCGA)|(AGCT)','AGCT',2],'HindIII':['(AAGCTT)|(TTCGAA)','AAGCTT',1],'BamHI':['(GGATCC)|(CCTAGG)','GGATCC',1],'SalI':['(GTCGAC)|(CAGCTG)','GTCGAC',1]}
+#seq='TCGAGGGATCCAATTCGAATTCAAGCTTACGTAGCTGGATCCGGATCCGGATCCAAAAAGTCGACGCGCTTTCGCGATTTAGTCGTCGCAGCTAGTTTGCCAGAAGCGT'
+#seq='AGCTTAAGCTTAAGCTTAAGCTTAAGCTTGGATCCGGATCCGTCGACGTCGAC'
+#seq='AGCTGGGGGCT'
+diction={'AluI':['AGCT',2],'HindIII':['AAGCTT',1],'BamHI':['GGATCC',1],'SalI':['GTCGAC',1]}#the distance to 5'
 keys=list(diction.keys())
 values=list(diction.values())
 
-
-def location(seq,enzyme):
-    index=keys.index(enzyme)
-    fragment=[]
-    loc=[]
-    loca=set()
-    rex=re.compile(values[index][0])
-    for i in range(len(seq)-len(values[index][1])):
-        fragment.append(seq[i:i+len(values[index][1])])
-        for j in range(len(fragment)):
-            if rex.search(fragment[j]):
-                loc.append(j)
-                loca=set(loc)
-    return loca
-                    
-
 def digest(seql,location,enzyme):
-    index=keys.index(enzyme)
-    number=values[index][2]
-    
     for i in location:
-        seql.insert(i+number,'?')
+        seql.insert(i-1,'?')#insert ? befor i-1, that is exactly at the location of digestion    
     seq=str(''.join(seql))
     fragment=seq.split('?')
     return fragment
-    
-for i in keys:
-    #print(location)
-    seql=list(seq)
-    
-    locati=location(seq,i)
-    fragment=digest(seql,locati,i)
-    print(i,fragment)
-    y_pos = np.arange(len(fragment))
-    performance = [len(i) for i in fragment] 
-    plt.bar(y_pos, performance, )
-    plt.xticks(y_pos)
-    plt.ylabel('bp')
-    plt.title('DNA fragments')
-     
-    plt.show()   
 
- 
-    #diction={'AluI':['(?=(?P<AluI>AGCT))','AGCT',2],'HindIII':['(?=(?P<HindIII>AAGCTT))','AAGCTT',1],'BamHI':['GGATCC','GGATCC',1],'SalI':['(?=(?P<SalI>GTCGAC))','GTCGAC',1]}
+def location(seq,enzyme):
+    index=keys.index(enzyme)
+    number=values[index][1]
+    length=len(values[index][0])
+    fragment=[]#a list to store all the pieces of seq
+    loc=[]#a list to store the location
+    loca=set()
+    rex=re.compile(values[index][0])    
+    for i in range(len(seq)-length+1):
+        fragment.append(seq[i:i+length])#split the seq according to the sequence length of restriction enzyme
+    for j in range(len(fragment)):
+        if rex.search(fragment[j]):
+            loc.append(j+number+1)#get the index just before the location            
+            loca=sorted(set(loc),reverse=True)#reverse the set so that when we insert the ?, the other won't be affected
+    return loca
+summary=[]    
+for i in keys:  
+    seql=list(seq)    
+    loc=location(seq,i)
+    if len(loc)==0:
+        print("This DNA sequence can't be digested by",i )
+    else:
+        fragment=digest(seql,loc,i)
+        summary.append(str(i)+':'+','.join(str(e) for e in loc))
+        print(i,':',str(' / '.join(fragment)))
+        #bar chart        
+        fragments=(i+1 for i in range(len(fragment)))
+        y_pos = np.arange(len(fragment))
+        bplength = [len(i) for i in fragment] 
+        plt.bar(y_pos, bplength)
+        plt.xticks(y_pos,fragments)
+        plt.ylabel('bp')
+        plt.title('DNA fragments')     
+        plt.show()   
+print('The DNA is assumed to be linear. It can be digested by:')    
+for e in summary:
+    print(e)  
+print('The number is the location of base (count from 1) after the restriction site')
+
